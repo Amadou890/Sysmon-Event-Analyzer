@@ -58,7 +58,7 @@ Output:
 
 ## Status
 
-> **Tested on synthetic samples only so far.** _[Update this line after you test with real events, for example: "Also tested on N events from <source>. Findings and fixes noted below."]_
+> **Tested on synthetic samples only so far.**
 
 ## Samples
 
