@@ -4,8 +4,7 @@ A small browser tool that explains suspicious Windows (Sysmon) events in plain E
 
 Companion project to my [Splunk Threat Hunting Lab](https://github.com/Amadou890/Splunk-Threat-Hunting-Lab).
 
-**Live demo:** _[add your GitHub Pages link here after enabling Pages]_
-
+**Live demo:** 
 ---
 
 ## Why I built it
